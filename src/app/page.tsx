@@ -42,7 +42,14 @@ export default function Home() {
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => undefined);
   }, []);
 
-  useEffect(() => {\n    const update = () => setLiveTime(new Date().toLocaleTimeString("id-ID", { hour12: false }));\n    update();\n    const timer = window.setInterval(update, 1000);\n    return () => window.clearInterval(timer);\n  }, []);\n\n  const completed = missions.filter((m) => m.done).length;
+  useEffect(() => {
+    const update = () => setLiveTime(new Date().toLocaleTimeString("id-ID", { hour12: false }));
+    update();
+    const timer = window.setInterval(update, 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const completed = missions.filter((m) => m.done).length;
   const impact = useMemo(() => (completed * 15 + (opened ? 45 : 0)), [completed, opened]);
 
   function completeMission(id: number) {
