@@ -70,7 +70,7 @@ export default function Home() {
           <button className="icon-button" aria-label="Bantuan"><CircleHelp size={20} /></button>
         </header>
 
-        <div className="app-content">
+        <div className={`app-content page-${tab}`}>
           {tab === "home" && <>
             <div className="welcome-row">
               <div><p className="eyebrow">SENIN, 23 NOVEMBER 2026</p><h1>Hai, Nabila! <span>✦</span></h1><p className="muted">Satu aksi kecil, satu perubahan besar.</p></div>
