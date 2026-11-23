@@ -25,7 +25,7 @@ export default function Home() {
   const [tab, setTab] = useState<Tab>("home");
   const [missions, setMissions] = useState(initialMissions);
   const [energy, setEnergy] = useState(40);
-  const [modal, setModal] = useState<"loot" | "receipt" | null>(null);
+  const [modal, setModal] = useState<"loot" | "receipt" | "help" | null>(null);
   const [opened, setOpened] = useState(false);
   const [saved, setSaved] = useState(false);
   const [campus, setCampus] = useState("Kampus Tegalboto");
@@ -67,7 +67,7 @@ export default function Home() {
             <span className="brand-mark"><span /></span>
             <span>KAPSUL</span>
           </a>
-          <button className="icon-button" aria-label="Bantuan"><CircleHelp size={20} /></button>
+          <button className="icon-button" aria-label="Bantuan" onClick={() => setModal("help")}><CircleHelp size={20} /></button>
         </header>
 
         <div className={`app-content page-${tab}`}>
@@ -142,7 +142,7 @@ export default function Home() {
       {modal && <div className="modal-backdrop" onClick={() => setModal(null)}>
         <section className="modal-sheet" onClick={(e) => e.stopPropagation()}>
           <button className="modal-close" onClick={() => setModal(null)}><X size={19} /></button>
-          {modal === "loot" ? <div className="loot-content">
+          {modal === "help" ? <div className="receipt-content"><div className="receipt-icon"><CircleHelp size={24} /></div><span className="eyebrow">PUSAT BANTUAN</span><h2>Butuh bantuan?</h2><p className="muted">KAPSUL adalah prototipe demo. Data kualitas udara, jarak, dan dampak masih berupa simulasi.</p><div className="receipt-line"><span>Navigasi</span><strong>Pilih Home, Misi, atau Dompet</strong></div><div className="receipt-line"><span>Misi</span><strong>Ikuti petunjuk lalu klaim energi</strong></div><button className="primary-button" onClick={() => setModal(null)}>Mengerti <ArrowRight size={17} /></button></div> : modal === "loot" ? <div className="loot-content">
             {!opened ? <><div className="loot-kicker"><Sparkles size={15} /> WEEKLY SURPRISE</div><div className="loot-capsule"><div className="loot-top"><Leaf size={28} /></div><div className="loot-bottom" /></div><h2>Ada kejutan<br />di dalam kapsul!</h2><p>Siap melihat hadiah dari aksi baikmu minggu ini?</p><button className="primary-button gold-button" onClick={() => setOpened(true)}>BUKA KAPSULKU <Sparkles size={17} /></button></> :
             <><div className="confetti">✦　✧　✳　✦　✧</div><div className="reward-medal"><Gift size={34} /></div><span className="eyebrow">SELAMAT, ENVIRONMENT HERO!</span><h2>Kamu dapat hadiah!</h2><div className="reward-ticket"><span>VOUCHER PARTNER</span><strong>Rp5.000</strong><small>KODE: KAPSUL5K</small></div><div className="reward-stats"><div><strong>+Rp12.000</strong><span>estimasi hemat</span></div><div><strong>-45 g</strong><span>estimasi PM2.5*</span></div></div><p className="reward-disclaimer">*Hadiah dan angka dampak adalah simulasi prototipe.</p><button className="primary-button" onClick={() => { setSaved(true); setTab("wallet"); setModal(null); }}>{saved ? "TERSIMPAN" : "SIMPAN KE DOMPET"} <Wallet size={17} /></button><button className="share-button" onClick={() => { if (navigator.share) navigator.share({ title: "KAPSUL", text: "Aku baru menyelesaikan misi ramah lingkungan di KAPSUL!" }).catch(() => undefined); else copyReferral(); }}><Share2 size={16} /> Bagikan pencapaian</button></>}
           </div> : <div className="receipt-content"><div className="receipt-icon"><Ticket size={24} /></div><span className="eyebrow">KAPSUL DIGITAL RECEIPT</span><h2>Struk dampakmu</h2><p className="muted">23 November 2026 • Minggu ke-47</p><div className="receipt-line"><span>Misi diselesaikan</span><strong>{completed} / 3</strong></div><div className="receipt-line"><span>Energi terkumpul</span><strong>{energy} / 100</strong></div><div className="receipt-line"><span>Estimasi emisi dihindari</span><strong>{impact} g</strong></div><div className="receipt-total"><span>STATUS KONTRIBUSI</span><strong>{completed ? "Terus bertumbuh 🌱" : "Mulai langkah pertamamu"}</strong></div><p className="receipt-disclaimer">Data ini merupakan ilustrasi simulasi, bukan sertifikat pengukuran lingkungan.</p><button className="primary-button" onClick={() => setModal(null)}>KEMBALI <ArrowRight size={17} /></button></div>}
