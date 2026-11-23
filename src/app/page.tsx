@@ -64,9 +64,27 @@ export default function Home() {
     window.setTimeout(() => setCopied(false), 1800);
   }
 
+  function triggerCapsuleOpen() {
+    if (bursting || opened) return;
+    setBursting(true);
+    window.setTimeout(() => {
+      setOpened(true);
+      setBursting(false);
+      confetti({
+        particleCount: 110,
+        spread: 78,
+        origin: { y: 0.62 },
+        colors: ["#0057FF", "#FACC15", "#FFFFFF"]
+      });
+    }, 800);
+    window.setTimeout(() => setRewardVisible(true), 1000);
+  }
+
   function openLoot() {
     setModal("loot");
     setOpened(false);
+    setBursting(false);
+    setRewardVisible(false);
     setSaved(false);
   }
 
