@@ -330,3 +330,37 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #0057
  .modal-sheet{border-radius:24px 24px 0 0;max-height:90dvh;padding:30px 20px calc(24px + env(safe-area-inset-bottom))}
 }
 @media(prefers-reduced-motion:reduce){.app-content,.air-card,.drop-card,.energy-card,.impact-card,.mission-card,.voucher-card{animation:none!important}}
+
+
+/* KAPSUL tactile feedback and capsule celebration choreography */
+button,.campus-menu button,.voucher-card,.impact-card,.mission-card{transition:transform .15s ease,box-shadow .2s ease,border-color .2s ease,background-color .2s ease}
+button:active,.campus-menu button:active,.impact-card:active{transform:scale(.95)}
+.primary-button:active,.outline-button:active,.qr-button:active,.campus-select:active{transform:scale(.97)}
+button:focus-visible{outline:3px solid #0057ff55;outline-offset:3px}
+.energy-track span,.mini-progress span{transition:width 700ms cubic-bezier(.22,.8,.25,1)}
+.energy-number{transition:color .3s ease,transform .35s ease}
+.capsule-ready .capsule{animation:capsule-wiggle .4s ease-in-out infinite alternate;transform-origin:50% 50%}
+.capsule-ready .capsule-glow{animation:glow-pulse 1.3s ease-in-out infinite}
+@keyframes capsule-wiggle{from{transform:rotate(31deg)}to{transform:rotate(37deg)}}
+@keyframes glow-pulse{0%,100%{transform:scale(.88);opacity:.5}50%{transform:scale(1.18);opacity:1}}
+.loot-capsule-burst{animation:capsule-tension .8s cubic-bezier(.2,.8,.25,1) both}
+@keyframes capsule-tension{0%{transform:rotate(24deg) scale(1)}18%{transform:rotate(29deg) scale(1.1)}30%{transform:rotate(18deg) scale(1.12)}42%{transform:rotate(30deg) scale(1.12)}54%{transform:rotate(18deg) scale(1.14)}68%{transform:rotate(28deg) scale(1.12)}82%{transform:rotate(21deg) scale(1.1)}100%{transform:rotate(24deg) scale(1.08);opacity:0}}
+.reward-reveal{opacity:0;transform:translateY(16px);pointer-events:none}
+.reward-reveal.visible{animation:reward-rise .5s cubic-bezier(.2,.7,.2,1) .0s both;pointer-events:auto}
+@keyframes reward-rise{to{opacity:1;transform:translateY(0)}}
+.cashier-live{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;margin:0 0 8px;border-radius:11px;background:#effaf5;color:#07875f;font-size:9px;font-weight:800;letter-spacing:.5px}
+.cashier-live span{display:flex;align-items:center;gap:8px}
+.cashier-live i{display:inline-block;width:8px;height:8px;border-radius:50%;background:#10b981;position:relative}
+.cashier-live i:after{content:"";position:absolute;inset:-4px;border:1px solid #10b981;border-radius:50%;animation:live-ping 1.5s cubic-bezier(0,0,.2,1) infinite}
+.cashier-live strong{font-size:13px;color:#145b48;font-variant-numeric:tabular-nums}
+@keyframes live-ping{75%,100%{transform:scale(2.2);opacity:0}}
+.voucher-card{isolation:isolate}
+.voucher-card:after{content:"";position:absolute;z-index:0;top:-60%;bottom:-60%;left:-35%;width:24%;transform:rotate(18deg);background:linear-gradient(90deg,transparent,#ffffffa8,transparent);animation:voucher-shimmer 4.5s ease-in-out infinite;pointer-events:none}
+.voucher-left,.qr-button,.voucher-notch{position:relative;z-index:1}
+@keyframes voucher-shimmer{0%,58%{left:-35%;opacity:0}65%{opacity:.9}82%,100%{left:120%;opacity:0}}
+.loot-content.is-bursting .loot-kicker,.loot-content.is-bursting h2,.loot-content.is-bursting>p{opacity:.4;transition:opacity .2s ease}
+@media(prefers-reduced-motion:reduce){
+ .capsule-ready .capsule,.capsule-ready .capsule-glow,.loot-capsule-burst,.reward-reveal.visible,.cashier-live i:after,.voucher-card:after{animation:none!important}
+ .reward-reveal.visible{opacity:1;transform:none}
+ button,.campus-menu button,.voucher-card,.impact-card,.mission-card,.energy-track span,.mini-progress span{transition:none!important}
+}
