@@ -6,12 +6,12 @@ import {
   Activity, ArrowRight, ArrowUpRight, Camera, Check, ChevronDown,
   CircleHelp, Clock3, Coins, Gift, Globe2, Leaf, MapPin, Menu, QrCode,
   Recycle, ShieldCheck, Sparkles, Ticket, Trophy, Users, Wallet, Wind, X, Zap,
-  Footprints, TrainFront, ScanLine, ReceiptText, Home, Target
+  Footprints, TrainFront, ScanLine, ReceiptText, Home as HomeIcon, Target
 } from "lucide-react";
 
 type Screen = "home"|"missions"|"gps"|"waste"|"energy"|"loot"|"receipt"|"wallet"|"team";
 const nav = [
-  {id:"home",label:"Beranda",icon:Home},{id:"missions",label:"Misi",icon:Target},
+  {id:"home",label:"Beranda",icon:HomeIcon},{id:"missions",label:"Misi",icon:Target},
   {id:"gps",label:"Validasi GPS",icon:MapPin},{id:"waste",label:"Setor Sampah",icon:Recycle},
   {id:"energy",label:"Kapsul",icon:Zap},{id:"receipt",label:"Struk Dampak",icon:ReceiptText},
   {id:"wallet",label:"Dompet",icon:Wallet},{id:"team",label:"Tim Kota",icon:Users}
