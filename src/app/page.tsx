@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 import confetti from "canvas-confetti";
 import {
-  Activity, ArrowDown, ArrowRight, ArrowUpRight, Bike, Camera, Check, ChevronDown,
-  CircleHelp, Clock3, Coins, Compass, Gift, Globe2, Leaf, MapPin, Menu, QrCode,
+  Activity, ArrowRight, ArrowUpRight, Camera, Check, ChevronDown,
+  CircleHelp, Clock3, Coins, Gift, Globe2, Leaf, MapPin, Menu, QrCode,
   Recycle, ShieldCheck, Sparkles, Ticket, Trophy, Users, Wallet, Wind, X, Zap,
   Footprints, TrainFront, ScanLine, ReceiptText, Home, Target
 } from "lucide-react";
@@ -16,7 +16,6 @@ const nav = [
   {id:"energy",label:"Kapsul",icon:Zap},{id:"receipt",label:"Struk Dampak",icon:ReceiptText},
   {id:"wallet",label:"Dompet",icon:Wallet},{id:"team",label:"Tim Kota",icon:Users}
 ] as const;
-const fmt = (n:number)=>new Intl.NumberFormat("id-ID").format(n);
 
 function Card({children,className=""}:{children:React.ReactNode;className?:string}){return <section className={"panel "+className}>{children}</section>}
 function Eyebrow({children}:{children:React.ReactNode}){return <p className="eyebrow">{children}</p>}
