@@ -1,182 +1,80 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import confetti from "canvas-confetti";
 import {
-  Activity, ArrowDownRight, ArrowRight, Bike, Camera, Check, ChevronDown,
-  CircleHelp, Clock3, Copy, Gift, Leaf, MapPin, Menu, Plus, QrCode,
-  Share2, ShieldCheck, Sparkles, Ticket, Wallet, Wind, X, Zap
+  Activity, ArrowDown, ArrowRight, ArrowUpRight, Bike, Camera, Check, ChevronDown,
+  CircleHelp, Clock3, Coins, Compass, Gift, Globe2, Leaf, MapPin, Menu, QrCode,
+  Recycle, ShieldCheck, Sparkles, Ticket, Trophy, Users, Wallet, Wind, X, Zap,
+  Footprints, TrainFront, ScanLine, ReceiptText, Home, Target
 } from "lucide-react";
 
-type Tab = "home" | "missions" | "wallet";
-type Mission = { id: number; title: string; subtitle: string; reward: string; icon: "bike" | "leaf" | "users"; done: boolean; tag: string };
+type Screen = "home"|"missions"|"gps"|"waste"|"energy"|"loot"|"receipt"|"wallet"|"team";
+const nav = [
+  {id:"home",label:"Beranda",icon:Home},{id:"missions",label:"Misi",icon:Target},
+  {id:"gps",label:"Validasi GPS",icon:MapPin},{id:"waste",label:"Setor Sampah",icon:Recycle},
+  {id:"energy",label:"Kapsul",icon:Zap},{id:"receipt",label:"Struk Dampak",icon:ReceiptText},
+  {id:"wallet",label:"Dompet",icon:Wallet},{id:"team",label:"Tim Kota",icon:Users}
+] as const;
+const fmt = (n:number)=>new Intl.NumberFormat("id-ID").format(n);
 
-const initialMissions: Mission[] = [
-  { id: 1, title: "Jalan kaki, bukan motor", subtitle: "Tempuh 3,2 km dengan berjalan kaki atau bersepeda.", reward: "+25 energi", icon: "bike", done: false, tag: "TRANSPORTASI" },
-  { id: 2, title: "Pilah sampahmu", subtitle: "Setorkan sampah terpilah ke titik drop-off terdekat.", reward: "+35 energi", icon: "leaf", done: false, tag: "PENGELOLAAN SAMPAH" },
-  { id: 3, title: "Ajak satu teman", subtitle: "Bagikan KAPSUL dan mulai aksi bareng.", reward: "+20 energi", icon: "users", done: false, tag: "KOMUNITAS" }
-];
+function Card({children,className=""}:{children:React.ReactNode;className?:string}){return <section className={"panel "+className}>{children}</section>}
+function Eyebrow({children}:{children:React.ReactNode}){return <p className="eyebrow">{children}</p>}
+function Progress({value}:{value:number}){return <div className="progress"><span style={{width:Math.min(100,value)+"%"}}/></div>}
+function Metric({icon:Icon,value,label,tone="blue"}:{icon:any;value:string;label:string;tone?:string}){return <div className="metric"><span className={"metric-icon "+tone}><Icon size={18}/></span><strong>{value}</strong><small>{label}</small></div>}
 
-const vouchers = [
-  { brand: "Kopi Titik Temu", title: "Diskon Rp5.000", code: "KAPSUL5K", expiry: "Berlaku sampai 30 Nov 2026", tone: "blue" },
-  { brand: "Refill Station", title: "Potongan Rp10.000", code: "ISIULANG10", expiry: "Berlaku sampai 15 Des 2026", tone: "green" }
-];
-
-export default function Home() {
-  const [tab, setTab] = useState<Tab>("home");
-  const [missions, setMissions] = useState(initialMissions);
-  const [energy, setEnergy] = useState(40);
-  const [modal, setModal] = useState<"loot" | "receipt" | "help" | null>(null);
-  const [opened, setOpened] = useState(false);
-  const [bursting, setBursting] = useState(false);
-  const [rewardVisible, setRewardVisible] = useState(false);
-  const [liveTime, setLiveTime] = useState("--:--:--");
-  const [saved, setSaved] = useState(false);
-  const [campus, setCampus] = useState("Kampus Tegalboto");
-  const [showCampus, setShowCampus] = useState(false);
-  const [distance, setDistance] = useState(0);
-  const [wasteFile, setWasteFile] = useState("");
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).then((registration) => registration.update()).catch(() => undefined);
-  }, []);
-
-  useEffect(() => {
-    const update = () => setLiveTime(new Date().toLocaleTimeString("id-ID", { hour12: false }));
-    update();
-    const timer = window.setInterval(update, 1000);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  const completed = missions.filter((m) => m.done).length;
-  const impact = useMemo(() => (completed * 15 + (opened ? 45 : 0)), [completed, opened]);
-
-  function completeMission(id: number) {
-    setMissions((prev) => prev.map((m) => m.id === id ? { ...m, done: true } : m));
-    const selected = missions.find((m) => m.id === id);
-    if (selected && !selected.done) setEnergy((v) => Math.min(100, v + (id === 1 ? 25 : id === 2 ? 35 : 20)));
-  }
-
-  function copyReferral() {
-    if (navigator.clipboard) navigator.clipboard.writeText("KAPSUL-NABILA").catch(() => undefined);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1800);
-  }
-
-  function triggerCapsuleOpen() {
-    if (bursting || opened) return;
-    setBursting(true);
-    window.setTimeout(() => {
-      setOpened(true);
-      setBursting(false);
-      confetti({
-        particleCount: 110,
-        spread: 78,
-        origin: { y: 0.62 },
-        colors: ["#0057FF", "#FACC15", "#FFFFFF"]
-      });
-    }, 800);
-    window.setTimeout(() => setRewardVisible(true), 1000);
-  }
-
-  function openLoot() {
-    setModal("loot");
-    setOpened(false);
-    setBursting(false);
-    setRewardVisible(false);
-    setSaved(false);
-  }
-
-  return (
-    <main className="app-shell">
-      <div className="phone-frame">
-        <header className="topbar">
-          <a className="brand" href="#" onClick={(e) => { e.preventDefault(); setTab("home"); }}>
-            <span className="brand-mark"><span /></span>
-            <span>KAPSUL</span>
-          </a>
-          <button className="icon-button" aria-label="Bantuan" onClick={() => setModal("help")}><CircleHelp size={20} /></button>
-        </header>
-
-        <div className={`app-content page-${tab}`}>
-          {tab === "home" && <>
-            <div className="welcome-row">
-              <div><p className="eyebrow">SENIN, 23 NOVEMBER 2026</p><h1>Hai, Nabila! <span>✦</span></h1><p className="muted">Satu aksi kecil, satu perubahan besar.</p></div>
-              <div className="avatar">N</div>
-            </div>
-
-            <button className="campus-select" onClick={() => setShowCampus(!showCampus)}>
-              <span className="campus-pin"><MapPin size={15} /></span><span>{campus}</span><ChevronDown size={16} />
-            </button>
-            {showCampus && <div className="campus-menu">{["Kampus Tegalboto", "Kampus Bondowoso", "Kampus Lumajang"].map((item) => <button key={item} onClick={() => { setCampus(item); setShowCampus(false); }}>{item}{campus === item && <Check size={15} />}</button>)}</div>}
-
-            <section className="air-card">
-              <div className="air-top"><span className="live-dot" /> <span>KUALITAS UDARA AREA KAMPUS</span><span className="demo-label">SIMULASI</span></div>
-              <div className="air-main"><div><strong>42</strong><span>µg/m³</span><p>PM2.5 • Sedang</p></div><div className="air-icon"><Wind size={31} /></div></div>
-              <div className="air-scale"><span /></div><div className="air-foot"><span>Baik</span><span>Sedang</span><span>Tidak sehat</span></div>
-            </section>
-
-            <section className="drop-card">
-              <div className="drop-copy"><span className="drop-kicker"><Sparkles size={13} /> WEEKLY DROP</span><h2>Energi penuh,<br />hadiah menunggu!</h2><p>Selesaikan misi untuk membuka kapsul kejutan minggu ini.</p><div className="drop-count"><Clock3 size={13} /> Reset dalam 2 hari 14 jam</div></div>
-              <div className={"capsule-art " + (energy >= 100 ? "capsule-ready" : "")}><div className="capsule-glow" /><div className="capsule"><div className="cap-top"><Leaf size={22} /></div><div className="cap-bottom" /></div><Sparkles className="sparkle s1" size={17} /><Sparkles className="sparkle s2" size={12} /></div>
-            </section>
-
-            <section className="energy-card">
-              <div className="section-head"><div><p className="eyebrow">PROGRES KAPSULMU</p><h3>Energi terkumpul</h3></div><strong className="energy-number">{energy}<small>/100</small></strong></div>
-              <div className="energy-track"><span style={{ width: energy + "%" }} /></div>
-              <div className="energy-foot"><span>{completed}/3 misi selesai</span><span>{energy >= 100 ? "Siap dibuka!" : 100 - energy + " energi lagi"}</span></div>
-              <button className={"primary-button " + (energy >= 100 ? "gold-button" : "")} onClick={() => energy >= 100 ? openLoot() : setTab("missions")}>{energy >= 100 ? "PECAHKAN KAPSUL" : "LANJUTKAN MISI"} <ArrowRight size={17} /></button>
-            </section>
-
-            <div className="section-head impact-heading"><div><p className="eyebrow">DAMPAK BAIKMU</p><h3>Jejak perubahan</h3></div><span className="period-pill">Minggu ini</span></div>
-            <div className="impact-grid">
-              <div className="impact-card"><span className="impact-icon green"><Leaf size={18} /></span><strong>{(impact / 1000).toFixed(2)} kg</strong><p>Estimasi emisi dihindari</p><small><ArrowDownRight size={12} /> Terus bertumbuh</small></div>
-              <div className="impact-card"><span className="impact-icon blue"><Zap size={18} /></span><strong>{completed * 1 + (opened ? 1 : 0)} aksi</strong><p>Aksi ramah lingkungan</p><small><Activity size={12} /> Kamu keren!</small></div>
-            </div>
-            <p className="disclaimer">*Angka dampak dan kualitas udara merupakan data simulasi untuk demonstrasi.</p>
-          </>}
-
-          {tab === "missions" && <>
-            <div className="page-intro"><p className="eyebrow">LEVEL UP YOUR IMPACT</p><h1>Misi hari ini <span>✦</span></h1><p className="muted">Pilih aksi yang bisa kamu lakukan hari ini.</p></div>
-            <div className="mission-progress"><div><span className="eyebrow">PROGRES MISI</span><strong>{completed} dari 3 selesai</strong></div><div className="mini-progress"><span style={{ width: (completed / 3 * 100) + "%" }} /></div></div>
-            {missions.map((mission) => <article className={"mission-card " + (mission.done ? "mission-done" : "")} key={mission.id}>
-              <div className={"mission-icon m" + mission.id}>{mission.icon === "bike" ? <Bike /> : mission.icon === "leaf" ? <Leaf /> : <Share2 />}</div>
-              <div className="mission-body"><span className="eyebrow">{mission.tag}</span><h3>{mission.title}</h3><p>{mission.subtitle}</p><strong className="reward-text">{mission.reward}</strong></div>
-              {mission.done ? <span className="done-check"><Check size={17} /></span> : <span className="mission-number">0{mission.id}</span>}
-              {mission.id === 1 && !mission.done && <div className="mission-action wide-action"><div className="distance-row"><span>Jarak simulasi</span><strong>{distance.toFixed(1)} / 3,2 km</strong></div><input aria-label="Jarak tempuh" type="range" min="0" max="3.2" step="0.1" value={distance} onChange={(e) => setDistance(Number(e.target.value))} /><div className="distance-foot"><span>Kecepatan: 5,4 km/jam</span><span>Anti-motor challenge</span></div><button className="outline-button" onClick={() => completeMission(1)} disabled={distance < 3.2}> {distance < 3.2 ? "Simulasikan perjalanan penuh" : "Klaim energi"} <ArrowRight size={15} /></button></div>}
-              {mission.id === 2 && !mission.done && <div className="mission-action wide-action"><label className="upload-box"><Camera size={18} /><span>{wasteFile || "Unggah foto sampah terpilah"}</span><input type="file" accept="image/*" onChange={(e) => setWasteFile(e.target.files?.[0]?.name || "")} /></label><button className="outline-button" onClick={() => completeMission(2)} disabled={!wasteFile}>Konfirmasi setoran <ArrowRight size={15} /></button></div>}
-              {mission.id === 3 && !mission.done && <div className="mission-action wide-action"><div className="referral-code"><span>KODE REFERRAL</span><strong>KAPSUL-NABILA</strong><button onClick={copyReferral}><Copy size={14} /> {copied ? "Tersalin" : "Salin"}</button></div><button className="outline-button" onClick={() => completeMission(3)}>Tandai sudah dibagikan <ArrowRight size={15} /></button></div>}
-            </article>)}
-            <div className="tip-card"><span><ShieldCheck size={18} /></span><div><strong>Aksi nyata, dampak nyata.</strong><p>Pastikan kamu melakukan aktivitasnya. KAPSUL mengajak kita membangun kebiasaan, bukan sekadar mengumpulkan poin.</p></div></div>
-          </>}
-
-          {tab === "wallet" && <>
-            <div className="page-intro"><p className="eyebrow">YOUR LITTLE TREASURES</p><h1>Dompet hadiah <span>✦</span></h1><p className="muted">Reward kecil untuk kebiasaan baikmu.</p></div>
-            <div className="wallet-summary"><div className="wallet-orb"><Wallet size={23} /></div><div><span className="eyebrow">TOTAL REWARD AKTIF</span><h2>Rp5.000</h2><p>1 voucher siap digunakan</p></div><div className="wallet-decoration">✳</div></div>
-            <div className="section-head"><div><p className="eyebrow">PUNYAMU</p><h3>Voucher tersedia</h3></div><span className="period-pill">2 reward</span></div>
-            {vouchers.map((voucher, i) => <article className={"voucher-card " + voucher.tone} key={voucher.code}><div className="voucher-left"><span className="voucher-brand">{voucher.brand}</span><h3>{voucher.title}</h3><p>{voucher.expiry}</p><span className="voucher-code">{voucher.code}</span></div><button className="qr-button" onClick={() => setModal("receipt")} aria-label="Lihat kode voucher"><QrCode size={27} /></button><span className="voucher-notch top" /><span className="voucher-notch bottom" /></article>)}
-            <button className="receipt-button" onClick={() => setModal("receipt")}><span><Ticket size={18} /></span><div><strong>Struk dampak digital</strong><small>Lihat ringkasan kontribusimu</small></div><ArrowRight size={18} /></button>
-            <div className="wallet-note"><Gift size={18} /><p>Lebih banyak aksi, lebih banyak kejutan. Selesaikan misi untuk mengisi kapsul berikutnya!</p></div>
-          </>}
-        </div>
-
-        <nav className="bottom-nav">
-          <button className={tab === "home" ? "active" : ""} onClick={() => setTab("home")}><span><Activity size={20} /></span><small>Home</small></button>
-          <button className={tab === "missions" ? "active" : ""} onClick={() => setTab("missions")}><span><Zap size={20} /></span><small>Misi</small>{completed < 3 && <i />}</button>
-          <button className={tab === "wallet" ? "active" : ""} onClick={() => setTab("wallet")}><span><Wallet size={20} /></span><small>Dompet</small></button>
-        </nav>
-      </div>
-
-      {modal && <div className="modal-backdrop" onClick={() => setModal(null)}>
-        <section className="modal-sheet" onClick={(e) => e.stopPropagation()}>
-          <button className="modal-close" onClick={() => setModal(null)}><X size={19} /></button>
-          {modal === "help" ? <div className="receipt-content"><div className="receipt-icon"><CircleHelp size={24} /></div><span className="eyebrow">PUSAT BANTUAN</span><h2>Butuh bantuan?</h2><p className="muted">KAPSUL adalah prototipe demo. Data kualitas udara, jarak, dan dampak masih berupa simulasi.</p><div className="receipt-line"><span>Navigasi</span><strong>Pilih Home, Misi, atau Dompet</strong></div><div className="receipt-line"><span>Misi</span><strong>Ikuti petunjuk lalu klaim energi</strong></div><button className="primary-button" onClick={() => setModal(null)}>Mengerti <ArrowRight size={17} /></button></div> : modal === "loot" ? <div className={"loot-content " + (bursting ? "is-bursting" : "")}>
-            {!opened ? <><div className="loot-kicker"><Sparkles size={15} /> WEEKLY SURPRISE</div><div className={"loot-capsule " + (bursting ? "loot-capsule-burst" : "")}><div className="loot-top"><Leaf size={28} /></div><div className="loot-bottom" /></div><h2>Ada kejutan<br />di dalam kapsul!</h2><p>Siap melihat hadiah dari aksi baikmu minggu ini?</p><button className="primary-button gold-button" onClick={triggerCapsuleOpen} disabled={bursting}>BUKA KAPSULKU <Sparkles size={17} /></button></> :
-            <><div className={"reward-reveal " + (rewardVisible ? "visible" : "")}><div className="confetti">✦　✧　✳　✦　✧</div><div className="reward-medal"><Gift size={34} /></div><span className="eyebrow">SELAMAT, ENVIRONMENT HERO!</span><h2>Kamu dapat hadiah!</h2><div className="reward-ticket"><span>VOUCHER PARTNER</span><strong>Rp5.000</strong><small>KODE: KAPSUL5K</small></div><div className="reward-stats"><div><strong>+Rp12.000</strong><span>estimasi hemat</span></div><div><strong>-45 g</strong><span>estimasi PM2.5*</span></div></div><p className="reward-disclaimer">*Hadiah dan angka dampak adalah simulasi prototipe.</p><button className="primary-button" onClick={() => { setSaved(true); setTab("wallet"); setModal(null); }}>{saved ? "TERSIMPAN" : "SIMPAN KE DOMPET"} <Wallet size={17} /></button><button className="share-button" onClick={() => { if (navigator.share) navigator.share({ title: "KAPSUL", text: "Aku baru menyelesaikan misi ramah lingkungan di KAPSUL!" }).catch(() => undefined); else copyReferral(); }}><Share2 size={16} /> Bagikan pencapaian</button></div></>}
-          </div> : <div className="receipt-content"><div className="receipt-icon"><Ticket size={24} /></div><span className="eyebrow">KAPSUL DIGITAL RECEIPT</span><h2>Struk dampakmu</h2><p className="muted">23 November 2026 • Minggu ke-47</p><div className="cashier-live"><span><i /> LIVE · LAYAR AKTIF</span><strong>{liveTime}</strong></div><div className="receipt-line"><span>Misi diselesaikan</span><strong>{completed} / 3</strong></div><div className="receipt-line"><span>Energi terkumpul</span><strong>{energy} / 100</strong></div><div className="receipt-line"><span>Estimasi emisi dihindari</span><strong>{impact} g</strong></div><div className="receipt-total"><span>STATUS KONTRIBUSI</span><strong>{completed ? "Terus bertumbuh 🌱" : "Mulai langkah pertamamu"}</strong></div><p className="receipt-disclaimer">Data ini merupakan ilustrasi simulasi, bukan sertifikat pengukuran lingkungan.</p><button className="primary-button" onClick={() => setModal(null)}>KEMBALI <ArrowRight size={17} /></button></div>}
-        </section>
-      </div>}
-    </main>
-  );
+export default function Home(){
+ const [screen,setScreen]=useState<Screen>("home");
+ const [started,setStarted]=useState(false);
+ const [energy,setEnergy]=useState(68);
+ const [distance,setDistance]=useState(4.2);
+ const [bottles,setBottles]=useState(3);
+ const [gpsOk,setGpsOk]=useState(false);
+ const [wasteOk,setWasteOk]=useState(false);
+ const [opened,setOpened]=useState(false);
+ const [district,setDistrict]=useState("Sudirman-Thamrin");
+ const [scope,setScope]=useState<"Distrik"|"Global">("Distrik");
+ const [filter,setFilter]=useState("Harian");
+ const [menu,setMenu]=useState(false);
+ const [toast,setToast]=useState("");
+ const [photo,setPhoto]=useState("");
+ const [copied,setCopied]=useState(false);
+ const completed=(distance>=8?1:0)+(wasteOk?1:0)+1;
+ const points=useMemo(()=>2450+(gpsOk?80:0)+(wasteOk?150:0),[gpsOk,wasteOk]);
+ const notify=(msg:string)=>{setToast(msg);window.setTimeout(()=>setToast(""),2200)};
+ const earn=(amount:number)=>setEnergy(v=>Math.min(100,v+amount));
+ const claimGPS=()=>{setGpsOk(true);earn(12);notify("Lokasi tervalidasi · +12 energi")};
+ const claimWaste=()=>{setWasteOk(true);earn(25);notify("Setoran berhasil · +25 energi")};
+ const openCapsule=()=>{setOpened(true);setScreen("loot");confetti({particleCount:130,spread:80,origin:{y:.65},colors:["#1d4ed8","#ffe083","#ffffff"]})};
+ const copy=()=>{navigator.clipboard?.writeText("KPSL-UMKM-7721");setCopied(true);notify("Kode penukaran disalin")};
+ const navTo=(id:Screen)=>{setScreen(id);setMenu(false)};
+ return <main className="app-shell">
+  {!started ? <div className="splash">
+   <div className="splash-top"><span className="brand-mark"><Leaf size={20}/></span><span>KAPSUL</span><span className="pwa-pill"><i/> PWA READY · TANPA UNDUH</span></div>
+   <div className="splash-hero"><div className="hero-orb"><div className="capsule"><span/><i/></div><Sparkles className="hero-spark one"/><Sparkles className="hero-spark two"/></div><Eyebrow>AKSI KECIL, DAMPAK BESAR</Eyebrow><h1>Nabung Energi,<br/>Panen Rupiah.</h1><p>Ubah langkah kaki, daur ulang botol plastik, dan moda transportasi kota jadi saldo cuan nyata.</p><button className="btn gold" onClick={()=>setStarted(true)}>Mulai Akses Instan <ArrowRight size={18}/></button><small>Chrome · Safari · WebAuthn Biometrics</small></div>
+   <div className="splash-stats"><div><strong>50.000+</strong><small>Warga kota</small></div><div><strong>68%</strong><small>Target kuota drop</small></div><div><strong>Rp340 jt</strong><small>Nilai reward kota</small></div></div>
+  </div> : <div className="workspace">
+   <aside className={"sidebar "+(menu?"show":"")}><div className="side-brand"><span className="brand-mark"><Leaf size={18}/></span><b>KAPSUL</b><button className="close-menu" onClick={()=>setMenu(false)}><X/></button></div><div className="side-profile"><div className="avatar">R</div><div><b>Halo, Ranger Kapsul</b><small>Eco-Citizen · Jakarta</small></div><span className="level">LV. 4</span></div><Eyebrow>MENU UTAMA</Eyebrow><nav>{nav.map(({id,label,icon:Icon})=><button key={id} className={screen===id?"selected":""} onClick={()=>navTo(id as Screen)}><Icon size={18}/><span>{label}</span>{id==="energy"&&energy>=100?<i className="nav-dot"/>:null}</button>)}</nav><div className="side-bottom"><div className="side-impact"><span><Wind size={17}/></span><div><small>UDARA KOTA</small><b>AQI 32 · Baik</b></div></div><small>VERSI 2.4.0 · PWA MODE</small></div></aside>
+   <div className="main-column"><header className="topbar"><button className="hamburger" onClick={()=>setMenu(!menu)}><Menu/></button><div className="crumb"><span>AREA KOTA</span><ChevronDown size={14}/><b>{district}</b></div><div className="top-actions"><span className="live-chip"><i/> LIVE DATA SIMULASI</span><button className="help" onClick={()=>notify("Pusat bantuan KAPSUL segera tersedia")}><CircleHelp size={19}/></button><div className="avatar small-avatar">R</div></div></header>
+   <div className="content-wrap"><div className="content-inner">
+   {screen==="home"&&<><div className="page-heading"><div><Eyebrow>JUMAT, 27 NOVEMBER 2026 · AREA KOTA</Eyebrow><h1>Halo, Ranger Kapsul <span>✦</span></h1><p>Pantau aksi hijau dan progres dampakmu hari ini.</p></div><button className="select-chip" onClick={()=>setDistrict(district==="Sudirman-Thamrin"?"Kuningan-Casablanca":"Sudirman-Thamrin")}><MapPin size={15}/>{district}<ChevronDown size={14}/></button></div>
+    <div className="hero-grid"><Card className="energy-hero"><div className="hero-copy"><span className="gold-tag"><Sparkles size={13}/> CELENGAN ENERGI KAPSUL</span><h2>Keep it up!<br/>Aksi hijaumu bernilai.</h2><p>Target emisi bersama komunitas kota telah tercapai 68%.</p><div className="hero-numbers"><strong>{energy}<small>/100 energi</small></strong><span>32 energi lagi menuju drop</span></div><Progress value={energy}/><button className="btn gold" onClick={()=>navTo(energy>=100?"energy":"missions")}>{energy>=100?"Buka kapsul":"Kumpulkan energi"} <ArrowRight size={17}/></button></div><div className="hero-capsule-wrap"><div className="halo"/><div className="capsule large"><span><Leaf size={25}/></span><i/></div><Sparkles className="float-spark a"/><Sparkles className="float-spark b"/></div></Card>
+    <Card className="city-card"><Eyebrow>PROGRES KOTA</Eyebrow><div className="city-progress"><strong>68<small>%</small></strong><span>Target kuota drop<br/><b>32 / 100 slot tersisa</b></span></div><Progress value={68}/><div className="city-foot"><span><Clock3 size={13}/> Tutup drop box 02:45:04</span><b>−184.2 kg CO₂</b></div><div className="city-art"><Globe2 size={66}/><span/><i/></div></Card></div>
+    <div className="section-title"><div><Eyebrow>RINGKASAN AKSI</Eyebrow><h2>Task board aktivitas hijau</h2></div><button className="text-link" onClick={()=>navTo("missions")}>Lihat semua <ArrowRight size={15}/></button></div>
+    <div className="task-grid"><Card className="task-card"><div className="task-top"><span className="task-icon blue"><Footprints/></span><span className="status">Berjalan</span></div><b>Pedometer langkah kaki</b><div className="task-value">6.420 <small>/ 8.000 langkah</small></div><Progress value={80}/><button className="subtle-link" onClick={()=>navTo("gps")}>Lihat validasi <ArrowRight size={14}/></button></Card><Card className="task-card"><div className="task-top"><span className="task-icon green"><Recycle/></span><span className="status done">Siap setor</span></div><b>Botol daur ulang RVM</b><div className="task-value">{bottles} <small>/ 4 botol PET</small></div><Progress value={bottles*25}/><button className="subtle-link" onClick={()=>navTo("waste")}>Pindai setoran <ArrowRight size={14}/></button></Card><Card className="task-card"><div className="task-top"><span className="task-icon gold-bg"><TrainFront/></span><span className="status done">Selesai</span></div><b>Naik KRL / Bus TransKota</b><div className="task-value">100% <small>terverifikasi</small></div><Progress value={100}/><button className="subtle-link" onClick={()=>navTo("receipt")}>Lihat dampak <ArrowRight size={14}/></button></Card><Card className="task-card balance-card"><Eyebrow>SALDO CUAN ECO</Eyebrow><div className="task-value money">Rp 24.500</div><p>Streak 25 hari · Top 5% Eco Citizen</p><button className="btn dark" onClick={()=>navTo("wallet")}>Tarik / Redeem <ArrowUpRight size={15}/></button></Card></div>
+    <div className="bottom-grid"><Card><div className="section-title compact"><div><Eyebrow>KONSISTENSI</Eyebrow><h3>Target harian eco</h3></div><b className="green-text">5/7 tercapai</b></div><div className="week-days">{["Sen","Sel","Rab","Kam","Jum","Sab","Min"].map((d,i)=><div className={i<5?"day done-day":"day"} key={d}><span>{d}</span><b>{i<5?<Check size={14}/>:i===5?"•":"·"}</b></div>)}</div></Card><Card><Eyebrow>DAMPAK TERKUMPUL</Eyebrow><div className="impact-big">−184.2 <small>kg CO₂</small></div><p className="muted">Kontribusi aktivitas terverifikasi minggu ini.</p><button className="subtle-link" onClick={()=>navTo("receipt")}>Lihat struk dampak <ArrowRight size={14}/></button></Card></div>
+   </>}
+   {screen==="missions"&&<><div className="page-heading"><div><Eyebrow>LEVEL UP YOUR IMPACT</Eyebrow><h1>Daftar misi harian <span>✦</span></h1><p>Selesaikan aktivitas dan kumpulkan dividen energi.</p></div><span className="pill">{completed}/5 MISI AKTIF</span></div><Card className="streak-banner"><div><Eyebrow>KONSISTENSI MISI</Eyebrow><h2>Pertahankan!</h2><p>Dividen energi aktif berlipat ganda dari aksi hijau harianmu.</p></div><div className="streak-count"><b>18</b><small>HARI STREAK</small></div></Card><div className="section-title"><div><Eyebrow>TASK BOARD</Eyebrow><h2>Target misi hari ini</h2></div><div className="segmented">{["Harian","Mingguan","Bulanan"].map(f=><button className={filter===f?"on":""} key={f} onClick={()=>setFilter(f)}>{f}</button>)}</div></div><div className="mission-list"><Card className="mission-row"><span className="task-icon blue"><Footprints/></span><div><Eyebrow>MOBILITAS HIJAU</Eyebrow><b>Pedometer langkah kaki</b><p>Capai target 8.000 langkah terverifikasi GPS.</p><Progress value={80}/><small>6.420 / 8.000 langkah · +80 Pts</small></div><button className="round-action" onClick={()=>navTo("gps")}><ArrowRight/></button></Card><Card className="mission-row"><span className="task-icon green"><Recycle/></span><div><Eyebrow>DAUR ULANG</Eyebrow><b>Botol daur ulang RVM</b><p>Setorkan botol PET bersih ke mesin mitra kota.</p><Progress value={bottles*25}/><small>{bottles} / 4 botol · +25 energi</small></div><button className="round-action" onClick={()=>navTo("waste")}><ArrowRight/></button></Card><Card className="mission-row"><span className="task-icon gold-bg"><TrainFront/></span><div><Eyebrow>TRANSPORTASI PUBLIK</Eyebrow><b>Naik KRL / Bus TransKota</b><p>Hubungkan perjalanan transportasi publikmu.</p><Progress value={100}/><small>100% selesai · +50 Pts</small></div><span className="complete-check"><Check/></span></Card><Card className="mission-row"><span className="task-icon purple"><Ticket/></span><div><Eyebrow>MITRA UMKM</Eyebrow><b>Tumbler di mitra UMKM</b><p>Gunakan tumbler pribadi saat membeli minuman.</p><Progress value={0}/><small>Belum diklaim · +50 Pts</small></div><button className="round-action" onClick={()=>notify("Misi tumbler ditambahkan ke daftar")}>+</button></Card></div><Card className="mission-footer"><ShieldCheck/><div><b>Aksi nyata, dampak nyata.</b><p>Validasi aktivitas menjaga ekosistem reward tetap adil untuk seluruh warga kota.</p></div></Card></>}
+   {screen==="gps"&&<><div className="page-heading"><div><Eyebrow>GEOLOCATION · ANTI SPOOFING</Eyebrow><h1>Validasi GPS <span>✦</span></h1><p>Verifikasi lokasi drop point sebelum mengklaim energi.</p></div><span className="pill success"><i/> GPS {gpsOk?"TERVALIDASI":"AKTIF"}</span></div><div className="gps-grid"><Card className="gps-main"><div className="radar"><div className="radar-ring r1"/><div className="radar-ring r2"/><div className="radar-ring r3"/><span className="radar-pin"><MapPin/></span><span className="radar-sweep"/></div><div className="gps-state"><Eyebrow>ECO-TELEMETRY ENGINE</Eyebrow><h2>{gpsOk?"Lokasi Terverifikasi":"Geofence Terkunci"}</h2><p>{gpsOk?"Posisi kamu cocok dengan titik RVM terdaftar.":"Pastikan kamu berada dalam radius aman kurang dari 15 meter."}</p></div><div className="gps-stats"><div><small>JARAK REAL-TIME</small><b>{distance.toFixed(1)} <small>meter</small></b></div><div><small>INTEGRITAS</small><b className="green-text">99.8% Valid</b></div><div><small>AKURASI GPS</small><b>±2 Meter</b></div></div><button className="btn primary full" onClick={claimGPS} disabled={gpsOk}>{gpsOk?"Lokasi sudah tervalidasi":"Konfirmasi kehadiran & lanjut"} <ArrowRight size={17}/></button><small className="note">Lokasi hanya divalidasi saat melakukan aksi. Data GPS demo.</small></Card><Card className="map-card"><div className="map-head"><div><Eyebrow>PETA PERIMETER RVM</Eyebrow><b>Geofencing Sudirman · Cluster A</b></div><span className="map-sync">AUTO-SYNC</span></div><div className="map-visual"><div className="map-gridlines"/><div className="road road-a"/><div className="road road-b"/><div className="geo-circle"/><span className="map-marker"><MapPin/></span><span className="map-label">RVM BOX #04</span><span className="you-dot">Kamu</span></div><div className="map-info"><MapPin size={17}/><div><b>Halte TransKota Sudirman — RVM Box #04</b><small>Waktu server real-time · GNSS L1+L5 dual band</small></div></div><div className="diagnostics"><div><ShieldCheck/><span><small>STATUS MOCK GPS</small><b>Aman (Non-Root)</b></span></div><div><Activity/><span><small>SENSOR GNSS</small><b>Terhubung</b></span></div></div></Card></div></>}
+   {screen==="waste"&&<><div className="page-heading"><div><Eyebrow>AI OPTICAL SENSOR V2.4</Eyebrow><h1>Validasi setor sampah <span>✦</span></h1><p>Pindai QR mesin RVM atau unggah bukti botol plastik.</p></div><span className="pill">RVM #JKT-082</span></div><div className="waste-grid"><Card className="scanner-card"><div className="scanner-visual"><div className="scan-corner tl"/><div className="scan-corner tr"/><div className="scan-corner bl"/><div className="scan-corner br"/><div className="bottle"><Recycle size={54}/></div><div className="scan-line"/></div><span className="scan-label"><ScanLine size={15}/> SMART RVM PARTNER · ONLINE</span><h2>Pindai & setor botol</h2><p>Arahkan kamera ke QR Code mesin RVM atau pilih foto botol plastikmu.</p><label className="btn primary upload-btn"><Camera size={17}/>{photo||"Pilih foto bukti"}<input type="file" accept="image/*" onChange={e=>setPhoto(e.target.files?.[0]?.name||"")}/></label><div className="scanner-meta"><span><Check/> Kondisi bersih</span><span><Check/> PET Grade A</span><span><Check/> Akurasi 98%</span></div></Card><div className="waste-side"><Card><Eyebrow>HASIL DETEKSI SENSOR</Eyebrow><div className="detect-count"><strong>{bottles}x</strong><span>Botol PET<br/>terdeteksi</span></div><div className="detail-line"><span>Jarak optimal</span><b>15–30 cm</b></div><div className="detail-line"><span>Potensi energi</span><b className="green-text">+25% kapsul</b></div><div className="detail-line"><span>Reward tunai</span><b>Rp 1.500</b></div><div className="detail-line"><span>Emisi dicegah</span><b>−0.45 kg CO₂</b></div><button className="subtle-link" onClick={()=>setBottles(0)}>Kalibrasi ulang</button></Card><Card className="allocation"><span className="task-icon gold-bg"><Coins/></span><Eyebrow>TUJUAN SETORAN</Eyebrow><h3>Celengan pintar</h3><p>Dividen energi langsung dialokasikan ke portofolio ESG.</p><Progress value={75}/><small>3 dari 4 botol target harian</small></Card><button className="btn primary full" onClick={claimWaste} disabled={wasteOk}>{wasteOk?"Setoran berhasil diklaim":"Selesaikan setoran & ambil energi"} <ArrowRight size={17}/></button></div></div></>}
+   {screen==="energy"&&<><div className="page-heading"><div><Eyebrow>AREA KOTA · CELENGAN PENUH 100%</Eyebrow><h1>Kapsulmu siap pecah! <span>✦</span></h1><p>Energi harianmu mencapai kapasitas maksimal.</p></div><span className="pill success">DROP AKTIF</span></div><Card className="energy-full"><div className="full-capsule"><div className="full-halo"/><div className="capsule xl"><span><Zap size={36}/></span><i/></div><Sparkles className="float-spark a"/><Sparkles className="float-spark b"/></div><div className="full-copy"><span className="gold-tag">✦ CELENGAN PENUH 100%</span><h2>Energi terkumpul.<br/>Hadiah menanti.</h2><p>Buka sebelum kuota drop kota ditutup. Slot diperbarui setiap 4 jam.</p><div className="energy-meter"><strong>{energy}%</strong><span>ENERGI TERKUMPUL</span></div><Progress value={energy}/><button className="btn gold" onClick={()=>energy>=100?openCapsule():notify("Selesaikan misi untuk mencapai 100% energi")}>Buka kapsul & klaim drop <ArrowRight/></button></div></Card><div className="reward-grid"><Card><Eyebrow>ESTIMASI CUAN</Eyebrow><h2>Rp 50.000+</h2><p>Saldo & merchant voucher</p></Card><Card><Eyebrow>STREAK AKTIF</Eyebrow><h2>2.5x <small>Multiplier</small></h2><p>Bonus 7 hari berturut-turut</p></Card><Card><Eyebrow>SISA KUOTA DROP</Eyebrow><h2>14 / 100</h2><p>Slot tersisa · rebutan cepat</p></Card></div></>}
+   {screen==="loot"&&<><div className="page-heading"><div><Eyebrow>DROP TERVERIFIKASI · ID #KP-89412</Eyebrow><h1>{opened?"Selamat! Kapsul pecah!":"Hadiah drop box"}</h1><p>Energi 100% berhasil membuka hadiah drop box kota hari ini.</p></div><span className="pill success"><i/> BERHASIL</span></div><Card className="loot-hero"><div className="loot-burst"><div className="loot-capsule"><Gift size={54}/></div><Sparkles className="loot-star s-a"/><Sparkles className="loot-star s-b"/></div><Eyebrow>HADIAH UTAMA</Eyebrow><h2>Rp 25.000</h2><p>Saldo tunai masuk ke dompet KAPSUL</p><span className="success-pill"><Check size={14}/> BERHASIL DIKLAIM</span></Card><div className="reward-grid three"><Card><span className="task-icon blue"><Wallet/></span><Eyebrow>SALDO GOPAY / OVO</Eyebrow><h3>Rp 25.000</h3><small>Langsung cair instan</small></Card><Card><span className="task-icon gold-bg"><Ticket/></span><Eyebrow>VOUCHER KOPI UMKM</Eyebrow><h3>Diskon 50%</h3><small>#KOPI-KAPSUL-88</small></Card><Card><span className="task-icon green"><Trophy/></span><Eyebrow>POIN KOMUNITAS</Eyebrow><h3>+500 XP</h3><small>Naik ke Silver 2</small></Card></div><div className="action-row"><button className="btn primary" onClick={()=>navTo("wallet")}>Masukkan ke dompet <Wallet size={17}/></button><button className="btn light" onClick={()=>navTo("receipt")}>Lihat struk <ReceiptText size={17}/></button></div></>}
+   {screen==="receipt"&&<><div className="page-heading"><div><Eyebrow>AUDIT FINANSIAL HIJAU · ISO-14064</Eyebrow><h1>Struk dampak harian <span>✦</span></h1><p>Bukti kontribusi aksi hijau dan akumulasi saldo cuanmu.</p></div><button className="btn light" onClick={()=>window.print()}><ReceiptText size={16}/> Cetak struk</button></div><div className="receipt-grid"><Card className="receipt-main"><div className="receipt-brand"><span className="brand-mark"><Leaf/></span><b>KAPSUL</b><span className="verified"><ShieldCheck size={14}/> VERIFIED</span></div><Eyebrow>STRUK BUKTI DAMPAK SAH</Eyebrow><h2>Dampak nyata hari ini</h2><div className="receipt-total"><div><small>TOTAL SALDO CUAN</small><strong>Rp 24.500</strong><span>Masuk ke dompet</span></div><div><small>EMISI DITEKAN</small><strong>−184.2 <i>kg CO₂</i></strong><span className="green-text">Terverifikasi</span></div></div><div className="receipt-meta"><span>Jumat, 27 November 2026 · 17:45 WIB</span><b>No. Ref: #KPSL-998213</b></div><div className="receipt-divider"/><h3>Rincian perolehan karbon</h3>{[{icon:Footprints,title:"8.420 Langkah Kaki",sub:"Pedometer · Sensor aktif",carbon:"−0.8 kg CO₂",money:"+Rp 8.000"},{icon:Recycle,title:"4 Botol Plastik PET",sub:"RVM Sudirman · Drop point",carbon:"−0.6 kg CO₂",money:"+Rp 6.000"},{icon:TrainFront,title:"1x Perjalanan Bus Listrik",sub:"TransKota · Koridor 1",carbon:"−2.1 kg CO₂",money:"+Rp 5.500"},{icon:Zap,title:"Bonus Streak 25 Hari",sub:"Multiplier 2.5x · Gold",carbon:"Konsistensi",money:"+Rp 5.000"}].map((item,i)=><div className="receipt-item" key={i}><span className="task-icon blue"><item.icon/></span><div><b>{item.title}</b><small>{item.sub}</small></div><div><strong>{item.money}</strong><small>{item.carbon}</small></div></div>)}<div className="receipt-grand"><span>Total terkumpul</span><b>Rp 24.500</b></div><p className="note">Kredit simulasi langsung masuk dompet utama. Angka merupakan data demonstrasi.</p></Card><Card className="receipt-side"><span className="task-icon green"><ShieldCheck/></span><Eyebrow>PROTOKOL ISO-14064</Eyebrow><h3>Audit finansial hijau</h3><p>Setiap aksi memiliki jejak perolehan dan estimasi pengurangan emisi.</p><div className="audit-stamp">KAPSUL<br/><b>VERIFIED</b><small>DEMO RECORD</small></div></Card></div></>}
+   {screen==="wallet"&&<><div className="page-heading"><div><Eyebrow>YOUR LITTLE TREASURES</Eyebrow><h1>Dompet voucher & QR UMKM <span>✦</span></h1><p>Saldo reward untuk mendukung mitra lokal.</p></div><span className="pill success">4 KUPON AKTIF</span></div><Card className="wallet-hero"><div><Eyebrow>SALDO SIAP BELANJA</Eyebrow><h2>Rp 74.500</h2><p>Bisa ditransfer ke rekening/e-wallet atau ditukar voucher.</p><div className="action-row"><button className="btn gold" onClick={()=>notify("Simulasi penarikan saldo dibuka")}>Tarik saldo <ArrowUpRight/></button><button className="btn glass" onClick={()=>notify("Arahkan kamera ke QR kasir mitra")}>Pindai QR <QrCode/></button></div></div><div className="wallet-orb"><Wallet size={54}/></div></Card><div className="wallet-grid"><Card className="redeem-card"><Eyebrow>KODE PENUKARAN</Eyebrow><div className="redeem-code">KPSL-UMKM-7721 <button onClick={copy}>{copied?<Check size={15}/>:<span>Salin</span>}</button></div><div className="fake-qr"><QrCode size={78}/></div><p>Tunjukkan ke kasir Warung Kopi / Mitra UMKM terdaftar saat transaksi.</p></Card><div className="voucher-list"><div className="section-title"><div><Eyebrow>MITRA SEKITARMU</Eyebrow><h2>Voucher tersedia</h2></div><span className="pill">28 TOKO</span></div>{[{name:"Kedai Kopi Sudirman",deal:"Diskon Rp 10.000",cost:"Tukar 200 Pts"},{name:"Toko Kelontong Berkah",deal:"Diskon belanja 15%",cost:"Tukar 150 Pts"},{name:"Tiket Bus TransKota",deal:"Gratis 1x perjalanan",cost:"Tukar 100 Pts"}].map((v,i)=><Card className="voucher-row" key={v.name}><span className={"voucher-logo vl"+i}>{i===0?<span>☕</span>:i===1?<Leaf/>:<TrainFront/>}</span><div><b>{v.name}</b><strong>{v.deal}</strong><small>{v.cost}</small></div><button className="round-action" onClick={()=>notify("Voucher berhasil ditambahkan")}>Gunakan</button></Card>)}</div></div></>}
+   {screen==="team"&&<><div className="page-heading"><div><Eyebrow>TANTANGAN KOLEKTIF KOTA</Eyebrow><h1>Kapsul Emas Jakarta <span>✦</span></h1><p>Kolaborasi warga menekan 10 ton emisi untuk membuka Grand Drop Rp100 juta.</p></div><div className="segmented">{(["Distrik","Global"] as const).map(s=><button className={scope===s?"on":""} key={s} onClick={()=>setScope(s)}>{s}</button>)}</div></div><Card className="team-hero"><div><span className="gold-tag"><Trophy size={14}/> GRAND DROP POOL</span><h2>Rp 100 Juta!</h2><p>Target emisi kota 7.2 dari 10.0 ton CO₂ telah tercapai.</p><strong>72% <small>TERCAPAI</small></strong><Progress value={72}/><div className="team-meta"><span>03 hari 14 jam tersisa</span><span>+14% minggu ini</span></div></div><div className="team-trophy"><Trophy size={70}/><Sparkles/></div></Card><div className="section-title"><div><Eyebrow>PERINGKAT KONTRIBUSI {scope.toUpperCase()}</Eyebrow><h2>Distrik paling aktif</h2></div><span className="pill success"><i/> REALTIME</span></div><div className="leaderboard">{[{rank:1,name:"Sudirman-Thamrin",people:"12.400 warga aktif",co2:"2.8 Ton CO₂",pct:28},{rank:2,name:"Kuningan-Casablanca",people:"9.800 warga aktif",co2:"2.1 Ton CO₂",pct:21},{rank:3,name:"Senayan-Gandaria",people:"7.500 warga aktif",co2:"1.6 Ton CO₂",pct:16}].map(x=><Card className={"leader-row "+(x.rank===1?"leader-first":"")} key={x.rank}><b className="rank">{String(x.rank).padStart(2,"0")}</b><div><b>{x.name}</b><small>{x.people} · {x.co2}</small><Progress value={x.pct*3.57}/></div><strong>{x.pct}%</strong></Card>)}</div><Card className="team-footer"><Trophy/><div><b>Distrik pelopor minggu ini</b><p>Distrik dengan kontribusi tertinggi menerima +500 Kapsul untuk seluruh warga aktif.</p></div></Card></>}
+   </div></div>
+   <nav className="mobile-nav">{[{id:"home",label:"Beranda",icon:Home},{id:"missions",label:"Misi",icon:Target},{id:"energy",label:"Kapsul",icon:Zap},{id:"wallet",label:"Voucher",icon:Ticket},{id:"team",label:"Tim",icon:Users}].map(({id,label,icon:Icon})=><button className={screen===id?"active":""} key={id} onClick={()=>navTo(id as Screen)}><Icon size={19}/><small>{label}</small></button>)}</nav>
+   </div></div>}
+   {toast&&<div className="toast"><Check size={16}/>{toast}</div>}
+ </main>
 }
